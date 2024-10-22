@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorWhite">#FFFFFF</color>
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
+    <color name="windowBackground">#FFFFFF</color>
+    <color name="textColorPrimary">#000000</color>
+    <color name="textColorSecondary">#808080</color>
+
+    <color name="nightColorPrimaryDark">#121212</color>
+    <color name="nightColorAccentDark">#BB86FC</color>
+    <color name="nightTextColorPrimary">#FFFFFF</color>
+    <color name="nightTextColorSecondary">#BDBDBD</color>
+
+    <color name="shimmer_placeholder">#dddddd</color>
+</resources>
