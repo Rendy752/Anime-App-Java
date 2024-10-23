@@ -1,27 +1,34 @@
 package com.example.animeappjava.repository;
 
 import com.example.animeappjava.data.local.dao.AnimeDetailDao;
+import com.example.animeappjava.data.remote.api.AnimeAPI;
 import com.example.animeappjava.data.remote.api.RetrofitInstance;
 import com.example.animeappjava.models.AnimeDetail;
 import com.example.animeappjava.models.AnimeDetailResponse;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
-import retrofit2.Call;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class AnimeDetailRepository {
 
     private final AnimeDetailDao animeDetailDao;
-    private final Executor executor;
+    private final AnimeAPI animeAPI;
 
     public AnimeDetailRepository(AnimeDetailDao animeDetailDao) {
         this.animeDetailDao = animeDetailDao;
-        this.executor = Executors.newSingleThreadExecutor();
+        this.animeAPI = RetrofitInstance.api;
     }
 
-    public Call<AnimeDetailResponse> getAnimeDetail(int id) {
-        return RetrofitInstance.api.getAnimeDetail(id);
+    public Single<AnimeDetailResponse> getAnimeDetail(int id) {
+        return Single.fromCallable(() -> {
+                    AnimeDetail cachedAnimeDetail = animeDetailDao.getAnimeDetailById(id);
+                    if (cachedAnimeDetail != null) {
+                        return new AnimeDetailResponse(cachedAnimeDetail);
+                    }
+
+                    return animeAPI.getAnimeDetail(id).execute().body();
+                })
+                .subscribeOn(Schedulers.io());
     }
 
     public AnimeDetailResponse getCachedAnimeDetail(int id) {
@@ -30,8 +37,11 @@ public class AnimeDetailRepository {
     }
 
     public void cacheAnimeDetail(AnimeDetailResponse animeDetailResponse) {
-        executor.execute(() -> {
-            animeDetailDao.insertAnimeDetail(animeDetailResponse.getData());
-        });
+        Single.fromCallable(() -> {
+                    animeDetailDao.insertAnimeDetail(animeDetailResponse.getData());
+                    return true;
+                })
+                .subscribeOn(Schedulers.io())
+                .subscribe();
     }
 }

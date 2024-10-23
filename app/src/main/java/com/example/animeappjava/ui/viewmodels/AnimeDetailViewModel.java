@@ -1,8 +1,5 @@
 package com.example.animeappjava.ui.viewmodels;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -11,25 +8,23 @@ import com.example.animeappjava.models.AnimeDetailResponse;
 import com.example.animeappjava.repository.AnimeDetailRepository;
 import com.example.animeappjava.utils.Resource;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.core.SingleObserver;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class AnimeDetailViewModel extends ViewModel {
 
     private final AnimeDetailRepository animeDetailRepository;
-    private final Executor executor;
     private final MutableLiveData<Resource<AnimeDetailResponse>> animeDetail;
-    private final Handler mainHandler;
+    private final CompositeDisposable disposables = new CompositeDisposable();
 
     public AnimeDetailViewModel(AnimeDetailRepository animeDetailRepository) {
         this.animeDetailRepository = animeDetailRepository;
-        this.executor = Executors.newSingleThreadExecutor();
         this.animeDetail = new MutableLiveData<>();
-        this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
     public LiveData<Resource<AnimeDetailResponse>> getAnimeDetail() {
@@ -37,46 +32,55 @@ public class AnimeDetailViewModel extends ViewModel {
     }
 
     public void getAnimeDetail(int id) {
-        executor.execute(() -> {
-            Resource<AnimeDetailResponse> cachedResponse = getCachedAnimeDetail(id);
-            if (cachedResponse != null) {
-                // Post to main thread using Handler
-                mainHandler.post(() -> animeDetail.setValue(cachedResponse));
-                return;
-            }
-
-            // Post loading state to main thread
-            mainHandler.post(() -> animeDetail.setValue(Resource.loading()));
-
-            // Get the Call object from the repository
-            Call<AnimeDetailResponse> call = animeDetailRepository.getAnimeDetail(id);
-
-            // Enqueue the call
-            call.enqueue(new Callback<AnimeDetailResponse>() {
-                @Override
-                public void onResponse(Call<AnimeDetailResponse> call, Response<AnimeDetailResponse> response) {
-                    // Post result to main thread
-                    mainHandler.post(() -> animeDetail.setValue(handleAnimeDetailResponse(response)));
-                }
-
-                @Override
-                public void onFailure(Call<AnimeDetailResponse> call, Throwable t) {
-                    // Post error to main thread
-                    mainHandler.post(() -> animeDetail.setValue(Resource.error(t.getMessage(), null)));
-                }
-            });
-        });
+        disposables.add(
+                Single.fromCallable(() -> {
+                            Resource<AnimeDetailResponse> cachedResponse = getCachedAnimeDetail(id);
+                            if (cachedResponse != null) {
+                                return cachedResponse;
+                            } else {
+                                return Resource.error("Anime detail not found in cache", null);
+                            }
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(response -> {
+                            if (response instanceof Resource.Success) {
+                                animeDetail.setValue((Resource.Success<AnimeDetailResponse>) response);
+                            } else if (response instanceof Resource.Error) {
+                                fetchAnimeDetailFromNetwork(id);
+                            }
+                        }, throwable -> {
+                            animeDetail.postValue(Resource.error(throwable.getMessage(), null));
+                        })
+        );
     }
 
-    private Resource<AnimeDetailResponse> handleAnimeDetailResponse(Response<AnimeDetailResponse> response) {
-        if (response.isSuccessful()) {
-            AnimeDetailResponse resultResponse = response.body();
-            if (resultResponse != null) {
-                cacheAnimeDetail(resultResponse);
-                return Resource.success(resultResponse);
-            }
-        }
-        return Resource.error(response.message(), null);
+    private void fetchAnimeDetailFromNetwork(int id) {
+        animeDetail.postValue(Resource.loading());
+
+        animeDetailRepository.getAnimeDetail(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleObserver<AnimeDetailResponse>() {
+                    private Disposable d;
+
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        this.d = d;
+                        disposables.add(d);
+                    }
+
+                    @Override
+                    public void onSuccess(@NonNull AnimeDetailResponse animeDetailResponse) {
+                        cacheAnimeDetail(animeDetailResponse);
+                        animeDetail.postValue(Resource.success(animeDetailResponse));
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        animeDetail.postValue(Resource.error(e.getMessage(), null));
+                    }
+                });
     }
 
     private Resource<AnimeDetailResponse> getCachedAnimeDetail(int id) {
@@ -85,8 +89,19 @@ public class AnimeDetailViewModel extends ViewModel {
     }
 
     private void cacheAnimeDetail(AnimeDetailResponse animeDetailResponse) {
-        executor.execute(() -> {
-            animeDetailRepository.cacheAnimeDetail(animeDetailResponse);
-        });
+        disposables.add(
+                Single.fromCallable(() -> {
+                            animeDetailRepository.cacheAnimeDetail(animeDetailResponse);
+                            return true;
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .subscribe()
+        );
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        disposables.clear();
     }
 }

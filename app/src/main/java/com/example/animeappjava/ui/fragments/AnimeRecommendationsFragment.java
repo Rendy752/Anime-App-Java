@@ -19,7 +19,6 @@ import com.example.animeappjava.databinding.FragmentRecommendationBinding;
 import com.example.animeappjava.models.AnimeRecommendation;
 import com.example.animeappjava.models.AnimeRecommendationResponse;
 import com.example.animeappjava.repository.AnimeRecommendationsRepository;
-import com.example.animeappjava.ui.activities.MainActivity;
 import com.example.animeappjava.ui.adapters.AnimeRecommendationsAdapter;
 import com.example.animeappjava.ui.providerfactories.AnimeRecommendationsViewModelProviderFactory;
 import com.example.animeappjava.ui.viewmodels.AnimeRecommendationsViewModel;
@@ -27,11 +26,14 @@ import com.example.animeappjava.utils.Resource;
 
 import java.util.List;
 
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+
 public class AnimeRecommendationsFragment extends Fragment {
 
     private FragmentRecommendationBinding binding;
     private AnimeRecommendationsViewModel viewModel;
     private AnimeRecommendationsAdapter animeRecommendationsAdapter;
+    private CompositeDisposable disposable = new CompositeDisposable();
 
     @Nullable
     @Override
@@ -104,5 +106,6 @@ public class AnimeRecommendationsFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+        disposable.clear();
     }
 }
