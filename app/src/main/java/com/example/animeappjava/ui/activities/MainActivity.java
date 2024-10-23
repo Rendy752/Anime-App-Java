@@ -41,6 +41,7 @@ import com.example.animeappjava.utils.ShakeDetector;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import okhttp3.Request;
 import okhttp3.Response;
 import okio.ByteString;
@@ -53,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private SensorManager sensorManager;
     private ShakeDetector shakeDetector;
     private boolean isDataLoaded = false;
+    private CompositeDisposable disposables = new CompositeDisposable();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -218,5 +220,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         sensorManager.unregisterListener(shakeDetector);
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        disposables.dispose();
     }
 }

@@ -26,7 +26,12 @@ public class AnimeDetailRepository {
                         return new AnimeDetailResponse(cachedAnimeDetail);
                     }
 
-                    return animeAPI.getAnimeDetail(id).execute().body();
+                    AnimeDetailResponse response = animeAPI.getAnimeDetail(id).execute().body();
+                    if (response != null) {
+                        return response;
+                    } else {
+                        throw new Exception("API response is null");
+                    }
                 })
                 .subscribeOn(Schedulers.io());
     }

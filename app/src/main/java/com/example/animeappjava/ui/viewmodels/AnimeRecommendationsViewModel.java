@@ -10,7 +10,6 @@ import com.example.animeappjava.utils.Resource;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
-import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -18,12 +17,11 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class AnimeRecommendationsViewModel extends ViewModel {
 
     private final AnimeRecommendationsRepository animeRecommendationsRepository;
-    private final MutableLiveData<Resource<AnimeRecommendationResponse>> animeRecommendations;
+    private final MutableLiveData<Resource<AnimeRecommendationResponse>> animeRecommendations = new MutableLiveData<>(Resource.loading());
     private int animeRecommendationsPage = 1;
 
     public AnimeRecommendationsViewModel(AnimeRecommendationsRepository animeRecommendationsRepository) {
         this.animeRecommendationsRepository = animeRecommendationsRepository;
-        this.animeRecommendations = new MutableLiveData<>(Resource.loading());
         fetchAnimeRecommendations();
     }
 
@@ -34,26 +32,25 @@ public class AnimeRecommendationsViewModel extends ViewModel {
     private void fetchAnimeRecommendations() {
         animeRecommendations.postValue(Resource.loading());
 
-        Single<AnimeRecommendationResponse> recommendationsSingle = animeRecommendationsRepository.getAnimeRecommendations(animeRecommendationsPage)
+        animeRecommendationsRepository.getAnimeRecommendations(animeRecommendationsPage)
                 .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleObserver<AnimeRecommendationResponse>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        // Handle subscription if needed
+                    }
 
-        recommendationsSingle.subscribe(new SingleObserver<AnimeRecommendationResponse>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-                // Handle the subscription if needed
-            }
+                    @Override
+                    public void onSuccess(@NonNull AnimeRecommendationResponse response) {
+                        animeRecommendations.postValue(Resource.success(response));
+                    }
 
-            @Override
-            public void onSuccess(@NonNull AnimeRecommendationResponse animeRecommendationResponse) {
-                animeRecommendations.postValue(Resource.success(animeRecommendationResponse));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable e) {
-                animeRecommendations.postValue(Resource.error(e.getMessage(), null));
-            }
-        });
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        animeRecommendations.postValue(Resource.error(e.getMessage(), null));
+                    }
+                });
     }
 
     public void refreshData() {

@@ -16,7 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.bumptech.glide.Glide;
@@ -37,6 +36,7 @@ public class AnimeDetailFragment extends Fragment implements MenuProvider {
 
     private FragmentDetailBinding binding;
     private AnimeDetailViewModel viewModel;
+    private AnimeDetail currentAnimeDetail;
 
     @Nullable
     @Override
@@ -50,7 +50,7 @@ public class AnimeDetailFragment extends Fragment implements MenuProvider {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         setupMenu();
-        setupViewModel();
+        fetchAnimeDetail();
         observeAnimeDetail();
     }
 
@@ -58,7 +58,7 @@ public class AnimeDetailFragment extends Fragment implements MenuProvider {
         requireActivity().addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
-    private void setupViewModel() {
+    private void fetchAnimeDetail() {
         int animeId = getArguments() != null ? getArguments().getInt("id") : 0;
         if (animeId != 0) {
             viewModel.getAnimeDetail(animeId);
@@ -66,18 +66,15 @@ public class AnimeDetailFragment extends Fragment implements MenuProvider {
     }
 
     private void observeAnimeDetail() {
-        viewModel.getAnimeDetail().observe(getViewLifecycleOwner(), new Observer<Resource<AnimeDetailResponse>>() {
-            @Override
-            public void onChanged(Resource<AnimeDetailResponse> resource) {
-                if (resource instanceof Resource.Success) {
-                    handleSuccess(resource.getData());
-                } else if (resource instanceof Resource.Error) {
-                    handleError(resource.getMessage());
-                } else if (resource instanceof Resource.Loading) {
-                    handleLoading();
-                } else {
-                    handleEmpty();
-                }
+        viewModel.getAnimeDetail().observe(getViewLifecycleOwner(), resource -> {
+            if (resource instanceof Resource.Success) {
+                handleSuccess(resource.getData());
+            } else if (resource instanceof Resource.Error) {
+                handleError(resource.getMessage());
+            } else if (resource instanceof Resource.Loading) {
+                handleLoading();
+            } else {
+                handleEmpty();
             }
         });
     }
@@ -89,44 +86,8 @@ public class AnimeDetailFragment extends Fragment implements MenuProvider {
 
     @Override
     public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
-        if (menuItem.getItemId() == R.id.action_share) {
-            Resource<AnimeDetailResponse> resource = viewModel.getAnimeDetail().getValue();
-
-            if (resource instanceof Resource.Success) {
-                AnimeDetailResponse response = resource.getData();
-                if (response != null && response.getData() != null) {
-                    AnimeDetail detail = response.getData();
-
-                    String animeUrl = detail.getUrl();
-                    String animeTitle = detail.getTitle();
-                    String animeScore = String.valueOf(detail.getScore());
-                    String animeGenres = TextUtils.joinOrNA(detail.getGenres(), g -> g.getName());
-
-                    String animeSynopsis = TextUtils.formatSynopsis(detail.getSynopsis());
-                    String animeTrailerUrl = detail.getTrailer().getUrl() != null ? detail.getTrailer().getUrl() : "";
-                    int malId = detail.getMal_id();
-                    String customUrl = "animeappjava://anime/detail/" + malId;
-
-                    String trailerSection = !animeTrailerUrl.isEmpty() ? "\n-------\nTrailer\n-------\n" + animeTrailerUrl : "";
-
-                    String sharedText = "Check out this anime on animeappjava!\n\n" +
-                            "Title: " + animeTitle + "\n" +
-                            "Score: " + animeScore + "\n" +
-                            "Genres: " + animeGenres + "\n\n" +
-                            "--------\nSynopsis\n--------\n" +
-                            animeSynopsis +
-                            trailerSection + "\n\n" +
-                            "Web URL: " + animeUrl + "\n" +
-                            "App URL: " + customUrl + "\n" +
-                            "Download the app now: https://play.google.com/store/apps/details?id=com.example.animeappjava";
-
-                    Intent sendIntent = new Intent(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, sharedText);
-                    sendIntent.setType("text/plain");
-                    Intent shareIntent = Intent.createChooser(sendIntent, null);
-                    startActivity(shareIntent);
-                }
-            }
+        if (menuItem.getItemId() == R.id.action_share && currentAnimeDetail != null) {
+            shareAnimeDetail(currentAnimeDetail);
             return true;
         }
         return false;
@@ -134,6 +95,7 @@ public class AnimeDetailFragment extends Fragment implements MenuProvider {
 
     private void handleSuccess(AnimeDetailResponse response) {
         if (response != null && response.getData() != null) {
+            currentAnimeDetail = response.getData();
             AnimeDetail detail = response.getData();
 
             binding.shimmerViewContainer.stopShimmer();
@@ -223,6 +185,37 @@ public class AnimeDetailFragment extends Fragment implements MenuProvider {
         binding.shimmerViewContainer.hideShimmer();
         binding.tvError.setVisibility(View.VISIBLE);
         binding.tvError.setText("An error occurred while fetching the anime detail.");
+    }
+
+    private void shareAnimeDetail(AnimeDetail detail) {
+        String animeUrl = detail.getUrl();
+        String animeTitle = detail.getTitle();
+        String animeScore = String.valueOf(detail.getScore());
+        String animeGenres = TextUtils.joinOrNA(detail.getGenres(), g -> g.getName());
+
+        String animeSynopsis = TextUtils.formatSynopsis(detail.getSynopsis());
+        String animeTrailerUrl = detail.getTrailer().getUrl() != null ? detail.getTrailer().getUrl() : "";
+        int malId = detail.getMal_id();
+        String customUrl = "animeappjava://anime/detail/" + malId;
+
+        String trailerSection = !animeTrailerUrl.isEmpty() ? "\n-------\nTrailer\n-------\n" + animeTrailerUrl : "";
+
+        String sharedText = "Check out this anime on animeappjava!\n\n" +
+                "Title: " + animeTitle + "\n" +
+                "Score: " + animeScore + "\n" +
+                "Genres: " + animeGenres + "\n\n" +
+                "--------\nSynopsis\n--------\n" +
+                animeSynopsis +
+                trailerSection + "\n\n" +
+                "Web URL: " + animeUrl + "\n" +
+                "App URL: " + customUrl + "\n" +
+                "Download the app now: https://play.google.com/store/apps/details?id=com.example.animeappjava";
+
+        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, sharedText);
+        sendIntent.setType("text/plain");
+        Intent shareIntent = Intent.createChooser(sendIntent, null);
+        startActivity(shareIntent);
     }
 
     @Override

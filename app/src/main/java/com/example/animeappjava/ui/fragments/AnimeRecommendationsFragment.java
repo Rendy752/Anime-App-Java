@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.animeappjava.R;
 import com.example.animeappjava.data.local.database.AnimeRecommendationsDatabase;
 import com.example.animeappjava.databinding.FragmentRecommendationBinding;
-import com.example.animeappjava.models.AnimeRecommendation;
 import com.example.animeappjava.models.AnimeRecommendationResponse;
 import com.example.animeappjava.repository.AnimeRecommendationsRepository;
 import com.example.animeappjava.ui.adapters.AnimeRecommendationsAdapter;
@@ -24,18 +23,12 @@ import com.example.animeappjava.ui.providerfactories.AnimeRecommendationsViewMod
 import com.example.animeappjava.ui.viewmodels.AnimeRecommendationsViewModel;
 import com.example.animeappjava.utils.Resource;
 
-import java.util.List;
-
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-
 public class AnimeRecommendationsFragment extends Fragment {
 
     private FragmentRecommendationBinding binding;
     private AnimeRecommendationsViewModel viewModel;
     private AnimeRecommendationsAdapter animeRecommendationsAdapter;
-    private CompositeDisposable disposable = new CompositeDisposable();
 
-    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentRecommendationBinding.inflate(inflater, container, false);
@@ -47,43 +40,36 @@ public class AnimeRecommendationsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         setupViewModel();
         setupRecyclerView();
-        setupObservers();
-        setupClickListeners();
-        setupRefreshFloatingActionButton();
-    }
-
-    private void setupRecyclerView() {
-        animeRecommendationsAdapter = new AnimeRecommendationsAdapter();
-        binding.rvAnimeRecommendations.setAdapter(animeRecommendationsAdapter);
-        binding.rvAnimeRecommendations.setLayoutManager(new LinearLayoutManager(getActivity()));
+        observeAnimeRecommendations();
+        setupItemClickListeners();
+        setupRefreshButton();
     }
 
     private void setupViewModel() {
-        AnimeRecommendationsRepository repository = new AnimeRecommendationsRepository(AnimeRecommendationsDatabase.getDatabase(getActivity()));
+        AnimeRecommendationsRepository repository = new AnimeRecommendationsRepository(AnimeRecommendationsDatabase.getDatabase(requireActivity()));
         AnimeRecommendationsViewModelProviderFactory factory = new AnimeRecommendationsViewModelProviderFactory(repository);
         viewModel = new ViewModelProvider(this, factory).get(AnimeRecommendationsViewModel.class);
     }
 
-    private void setupObservers() {
+    private void setupRecyclerView() {
+        animeRecommendationsAdapter = new AnimeRecommendationsAdapter();
+        binding.rvAnimeRecommendations.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvAnimeRecommendations.setAdapter(animeRecommendationsAdapter);
+    }
+
+    private void observeAnimeRecommendations() {
         viewModel.getAnimeRecommendations().observe(getViewLifecycleOwner(), resource -> {
             if (resource instanceof Resource.Success) {
                 AnimeRecommendationResponse response = resource.getData();
-
                 if (response != null) {
-                    List<AnimeRecommendation> recommendations = response.getData();
-                    animeRecommendationsAdapter.submitList(recommendations);
+                    animeRecommendationsAdapter.submitList(response.getData());
                 }
-
-                animeRecommendationsAdapter.setLoading(false);
-            } else if (resource instanceof Resource.Error) {
-                animeRecommendationsAdapter.setLoading(false);
-            } else if (resource instanceof Resource.Loading) {
-                animeRecommendationsAdapter.setLoading(true);
             }
+            animeRecommendationsAdapter.setLoading(resource instanceof Resource.Loading);
         });
     }
 
-    private void setupClickListeners() {
+    private void setupItemClickListeners() {
         animeRecommendationsAdapter.setOnItemClickListener(animeId -> {
             Bundle bundle = new Bundle();
             bundle.putInt("id", animeId);
@@ -93,12 +79,12 @@ public class AnimeRecommendationsFragment extends Fragment {
                     .setPopEnterAnim(R.anim.slide_in_left)
                     .setPopExitAnim(R.anim.slide_out_right)
                     .build();
-            NavHostFragment.findNavController(AnimeRecommendationsFragment.this)
+            NavHostFragment.findNavController(this)
                     .navigate(R.id.action_animeRecommendationsFragment_to_animeDetailFragment, bundle, navOptions);
         });
     }
 
-    private void setupRefreshFloatingActionButton() {
+    private void setupRefreshButton() {
         binding.fabRefresh.setOnClickListener(v -> viewModel.refreshData());
     }
 
@@ -106,6 +92,5 @@ public class AnimeRecommendationsFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
-        disposable.clear();
     }
 }
