@@ -1,5 +1,6 @@
 package com.example.animeappjava.ui.fragments;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,19 +16,32 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.animeappjava.R;
 import com.example.animeappjava.data.local.database.AnimeRecommendationsDatabase;
+import com.example.animeappjava.data.remote.api.AnimeAPI;
 import com.example.animeappjava.databinding.FragmentRecommendationBinding;
 import com.example.animeappjava.models.AnimeRecommendationResponse;
 import com.example.animeappjava.repository.AnimeRecommendationsRepository;
+import com.example.animeappjava.ui.activities.MainActivity;
 import com.example.animeappjava.ui.adapters.AnimeRecommendationsAdapter;
 import com.example.animeappjava.ui.providerfactories.AnimeRecommendationsViewModelProviderFactory;
 import com.example.animeappjava.ui.viewmodels.AnimeRecommendationsViewModel;
 import com.example.animeappjava.utils.Resource;
 
 public class AnimeRecommendationsFragment extends Fragment {
-
+    private AnimeAPI animeAPI;
     private FragmentRecommendationBinding binding;
     private AnimeRecommendationsViewModel viewModel;
     private AnimeRecommendationsAdapter animeRecommendationsAdapter;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof MainActivity) {
+            animeAPI = ((MainActivity) context).getAnimeAPI(); // Get API from MainActivity
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -46,7 +60,7 @@ public class AnimeRecommendationsFragment extends Fragment {
     }
 
     private void setupViewModel() {
-        AnimeRecommendationsRepository repository = new AnimeRecommendationsRepository(AnimeRecommendationsDatabase.getDatabase(requireActivity()));
+        AnimeRecommendationsRepository repository = new AnimeRecommendationsRepository(animeAPI, AnimeRecommendationsDatabase.getDatabase(requireActivity()));
         AnimeRecommendationsViewModelProviderFactory factory = new AnimeRecommendationsViewModelProviderFactory(repository);
         viewModel = new ViewModelProvider(this, factory).get(AnimeRecommendationsViewModel.class);
     }

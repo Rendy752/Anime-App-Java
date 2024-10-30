@@ -27,6 +27,7 @@ import com.chuckerteam.chucker.api.RetentionManager;
 import com.example.animeappjava.R;
 import com.example.animeappjava.data.local.database.AnimeDetailDatabase;
 import com.example.animeappjava.data.local.database.AnimeRecommendationsDatabase;
+import com.example.animeappjava.data.remote.api.AnimeAPI;
 import com.example.animeappjava.data.remote.api.RetrofitInstance;
 import com.example.animeappjava.databinding.ActivityMainBinding;
 import com.example.animeappjava.repository.AnimeDetailRepository;
@@ -49,6 +50,10 @@ import okio.ByteString;
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
+    private AnimeAPI animeAPI;
+    public AnimeAPI getAnimeAPI() {
+        return animeAPI;
+    }
     private AnimeRecommendationsViewModel animeRecommendationsViewModel;
     private AnimeDetailViewModel animeDetailViewModel;
     private SensorManager sensorManager;
@@ -59,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        animeAPI = RetrofitInstance.api;
         SplashScreen.installSplashScreen(this).setKeepOnScreenCondition(() -> !isDataLoaded);
         setupSensor();
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -91,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupViewModels() {
         // Initialize animeRecommendationsViewModel
-        AnimeRecommendationsRepository recommendationsRepository = new AnimeRecommendationsRepository(AnimeRecommendationsDatabase.getDatabase(this));
+        AnimeRecommendationsRepository recommendationsRepository = new AnimeRecommendationsRepository(animeAPI, AnimeRecommendationsDatabase.getDatabase(this));
         AnimeRecommendationsViewModelProviderFactory recommendationsFactory = new AnimeRecommendationsViewModelProviderFactory(recommendationsRepository);
         animeRecommendationsViewModel = new ViewModelProvider(this, recommendationsFactory).get(AnimeRecommendationsViewModel.class);
 

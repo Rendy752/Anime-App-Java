@@ -8,7 +8,6 @@ import com.example.animeappjava.models.AnimeRecommendationResponse;
 import com.example.animeappjava.repository.AnimeRecommendationsRepository;
 import com.example.animeappjava.utils.Resource;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -34,7 +33,7 @@ public class AnimeRecommendationsViewModel extends ViewModel {
 
         animeRecommendationsRepository.getAnimeRecommendations(animeRecommendationsPage)
                 .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .subscribe(new SingleObserver<AnimeRecommendationResponse>() {
                     @Override
                     public void onSubscribe(@NonNull Disposable d) {

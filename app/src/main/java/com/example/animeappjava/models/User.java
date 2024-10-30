@@ -9,10 +9,6 @@ public class User {
         this.username = username;
     }
 
-    public User(String url, String username, String s) {
-        this(url, username);
-    }
-
     public String getUrl() {
         return url;
     }

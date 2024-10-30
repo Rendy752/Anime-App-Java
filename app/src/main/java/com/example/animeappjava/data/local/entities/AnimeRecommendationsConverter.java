@@ -52,6 +52,6 @@ public class AnimeRecommendationsConverter {
         if (value == null || value.isEmpty()) {
             return null;
         }
-        return new User(value, "", "");
+        return new User(value, "");
     }
 }

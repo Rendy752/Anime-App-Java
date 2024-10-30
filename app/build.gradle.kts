@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,12 +14,13 @@ android {
 
     defaultConfig {
         applicationId = "com.example.animeappjava"
-        minSdk = 30
+        minSdk = 27
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -51,9 +54,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.ktx.v286)
@@ -109,4 +109,28 @@ dependencies {
     //Chucker
     debugImplementation(libs.library)
     releaseImplementation(libs.library.no.op)
+
+    // --- Testing Dependencies ---
+    testImplementation("junit:junit:4.13.2") // JUnit for unit testing
+    androidTestImplementation("androidx.test.ext:junit:1.1.5") // AndroidX Test for UI testing
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1") // Espresso for UI testing
+
+    // Mocking Libraries
+    testImplementation("org.mockito:mockito-core:5.3.1") // Mockito for mocking
+    implementation("org.mockito:mockito-core:5.3.1") // Mockito for mocking
+//    testImplementation("org.mockito:mockito-inline:5.3.1") // Mockito for mocking final classes and methods
+//    androidTestImplementation("org.mockito:mockito-inline:5.2.0") // Mockito for mocking final classes and methods
+    androidTestImplementation("org.mockito:mockito-android:5.3.1") // Mockito for Android testing
+
+    // --- Architecture Components Testing ---
+    androidTestImplementation("androidx.arch.core:core-testing:2.2.0") // For testing LiveData and other Architecture Components
+
+    // --- RxJava Testing ---
+    testImplementation("io.reactivex.rxjava3:rxandroid:3.0.0") // RxAndroid for Android-specific RxJava utilities
+    testImplementation("io.reactivex.rxjava3:rxjava:3.0.0") // RxJava for reactive programming
+
+    testImplementation("net.bytebuddy:byte-buddy:1.14.8")
+    testImplementation("net.bytebuddy:byte-buddy-agent:1.14.8")
+    implementation("androidx.multidex:multidex:2.0.1")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
 }
