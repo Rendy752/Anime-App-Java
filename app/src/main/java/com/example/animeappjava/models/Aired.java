@@ -1,5 +1,7 @@
 package com.example.animeappjava.models;
 
+import java.util.Objects;
+
 public class Aired {
     private final String from;
     private final String to;
@@ -37,7 +39,7 @@ public class Aired {
         Aired aired = (Aired) o;
 
         if (!from.equals(aired.from)) return false;
-        if (!to.equals(aired.to)) return false;
+        if (!Objects.equals(to, aired.to)) return false;
         if (!prop.equals(aired.prop)) return false;
         return string.equals(aired.string);
     }
@@ -45,7 +47,7 @@ public class Aired {
     @Override
     public int hashCode() {
         int result = from.hashCode();
-        result = 31 * result + to.hashCode();
+        result = 31 * result + (to != null ? to.hashCode() : 0);
         result = 31 * result + prop.hashCode();
         result = 31 * result + string.hashCode();
         return result;

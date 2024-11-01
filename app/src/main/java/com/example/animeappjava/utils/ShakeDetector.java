@@ -7,7 +7,6 @@ import android.hardware.SensorEventListener;
 public class ShakeDetector implements SensorEventListener {
 
     private static final int SHAKE_THRESHOLD = 800;
-
     private final OnShakeListener onShakeListener;
 
     private long lastUpdate = 0;

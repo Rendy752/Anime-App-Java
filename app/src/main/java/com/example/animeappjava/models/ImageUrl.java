@@ -1,5 +1,7 @@
 package com.example.animeappjava.models;
 
+import java.util.Objects;
+
 public class ImageUrl {
     private final String image_url;
     private final String small_image_url;
@@ -42,20 +44,19 @@ public class ImageUrl {
 
         ImageUrl imageUrl = (ImageUrl) o;
 
-        if (!image_url.equals(imageUrl.image_url)) return false;
-        if (!small_image_url.equals(imageUrl.small_image_url)) return false;
-        if (medium_image_url != null ? !medium_image_url.equals(imageUrl.medium_image_url) : imageUrl.medium_image_url != null)
-            return false;
-        if (!large_image_url.equals(imageUrl.large_image_url)) return false;
-        return maximum_image_url != null ? maximum_image_url.equals(imageUrl.maximum_image_url) : imageUrl.maximum_image_url == null;
+        if (!Objects.equals(image_url, imageUrl.image_url)) return false;
+        if (!Objects.equals(small_image_url, imageUrl.small_image_url)) return false;
+        if (!Objects.equals(medium_image_url, imageUrl.medium_image_url)) return false;
+        if (!Objects.equals(large_image_url, imageUrl.large_image_url)) return false;
+        return Objects.equals(maximum_image_url, imageUrl.maximum_image_url);
     }
 
     @Override
     public int hashCode() {
-        int result = image_url.hashCode();
-        result = 31 * result + small_image_url.hashCode();
+        int result = image_url != null ? image_url.hashCode() : 0;
+        result = 31 * result + (small_image_url != null ? small_image_url.hashCode() : 0);
         result = 31 * result + (medium_image_url != null ? medium_image_url.hashCode() : 0);
-        result = 31 * result + large_image_url.hashCode();
+        result = 31 * result + (large_image_url != null ? large_image_url.hashCode() : 0);
         result = 31 * result + (maximum_image_url != null ? maximum_image_url.hashCode() : 0);
         return result;
     }

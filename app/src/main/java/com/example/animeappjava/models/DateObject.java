@@ -1,25 +1,27 @@
 package com.example.animeappjava.models;
 
-public class DateObject {
-    private final int day;
-    private final int month;
-    private final int year;
+import java.util.Objects;
 
-    public DateObject(int day, int month, int year) {
+public class DateObject {
+    private final Integer day;
+    private final Integer month;
+    private final Integer year;
+
+    public DateObject(Integer day, Integer month, Integer year) {
         this.day = day;
         this.month = month;
         this.year = year;
     }
 
-    public int getDay() {
+    public Integer getDay() {
         return day;
     }
 
-    public int getMonth() {
+    public Integer getMonth() {
         return month;
     }
 
-    public int getYear() {
+    public Integer getYear() {
         return year;
     }
 
@@ -30,16 +32,16 @@ public class DateObject {
 
         DateObject that = (DateObject) o;
 
-        if (day != that.day) return false;
-        if (month != that.month) return false;
-        return year == that.year;
+        if (!Objects.equals(day, that.day)) return false;
+        if (!Objects.equals(month, that.month)) return false;
+        return Objects.equals(year, that.year);
     }
 
     @Override
     public int hashCode() {
-        int result = day;
-        result = 31 * result + month;
-        result = 31 * result + year;
+        int result = day != null ? day.hashCode() : 0;
+        result = 31 * result + (month != null ? month.hashCode() : 0);
+        result = 31 * result + (year != null ? year.hashCode() : 0);
         return result;
     }
 

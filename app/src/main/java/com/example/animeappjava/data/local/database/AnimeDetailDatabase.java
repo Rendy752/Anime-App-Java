@@ -11,7 +11,7 @@ import com.example.animeappjava.data.local.dao.AnimeDetailDao;
 import com.example.animeappjava.data.local.entities.AnimeDetailConverter;
 import com.example.animeappjava.models.AnimeDetail;
 
-@Database(entities = {AnimeDetail.class}, version = 6, exportSchema = false)
+@Database(entities = {AnimeDetail.class}, version = 8, exportSchema = false)
 @TypeConverters(AnimeDetailConverter.class)
 public abstract class AnimeDetailDatabase extends RoomDatabase {
 
